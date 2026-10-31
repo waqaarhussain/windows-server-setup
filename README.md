@@ -65,13 +65,23 @@ No cleanup is executed during setup. The privileged worker is installed under a 
 
 ## WinRAR licence
 
-No licence is embedded or downloaded. Put your own **rarreg.key** on your Desktop before installation, or beside `install.ps1`. The installer detects it and copies it into WinRAR after installation. You can also pass it explicitly:
+The main installer now downloads `rarreg.key` automatically from the configured Google Drive direct-download link, validates the registration-file format, and passes the temporary file to setup. After WinRAR installs, setup copies it to `C:\Program Files\WinRAR\rarreg.key` and checks the copied bytes. The temporary download is removed when installation finishes, including on failure. The normal install command above includes this automatically; no manual Desktop download is required.
+
+The Google Drive URL is visible in this public repository. The registration-file bytes are not committed. The Drive file must be accessible without signing in. An HTML sign-in/confirmation page or a truncated registration file causes installation to stop before setup runs. Format checks do not establish that a licence is valid.
+
+A local `rarreg.key` beside the installer or on your Desktop takes priority over the download. You can also pass a local file explicitly:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -WinRARLicensePath 'C:\Private\rarreg.key'
 ```
 
-Without a supplied file, WinRAR installs normally and an existing installed licence is left alone. A successful copy check establishes byte equality, not licence validity. Licence and certificate files are excluded by `.gitignore`; do not force-add them.
+Use `-WinRARLicenseUrl 'https://your-direct-download-url'` to override the configured URL. To install without downloading a licence, use:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -SkipWinRARLicenseDownload
+```
+
+Skipping the download still allows an automatically detected local licence. Without a supplied file, WinRAR installs normally and an existing installed licence is left alone. Licence and certificate files remain excluded by `.gitignore`; do not force-add them.
 
 ## Download verification
 

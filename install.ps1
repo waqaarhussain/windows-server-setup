@@ -2,8 +2,16 @@
 [CmdletBinding()]
 param(
     [string]$WinRARLicensePath,
+    [string]$WinRARLicenseUrl = 'https://drive.google.com/uc?export=download&id=12IOtUoZZv3sCcHJuC-4Lz1lh76z_36fc',
+    [switch]$SkipWinRARLicenseDownload,
     [switch]$FromLocalPackage
 )
+
+function Test-WinRARLicenseFile([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $content = [string](Get-Content -LiteralPath $Path -Raw)
+    return ($content -match '\ARAR registration data\r?\n' -and $content -match '(?m)^UID=[^\r\n]+')
+}
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -15,7 +23,8 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
     throw 'Open Windows PowerShell as Administrator, then run the installer again.'
 }
 
-# Licences never pass through GitHub or the download manifest.
+# Local licence files take priority. Otherwise use the configured download URL.
+# The URL is public in this repository; licence bytes are not committed.
 if (-not $WinRARLicensePath) {
     $candidates = @()
     if ($PSScriptRoot) { $candidates += Join-Path $PSScriptRoot 'rarreg.key' }
@@ -68,6 +77,19 @@ try {
         if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -ne $expected) {
             throw "Checksum mismatch: $relative. No setup script was run."
         }
+    }
+
+    if (-not $WinRARLicensePath -and -not $SkipWinRARLicenseDownload) {
+        $licenceUri = $null
+        if (-not [uri]::TryCreate($WinRARLicenseUrl, [UriKind]::Absolute, [ref]$licenceUri) -or $licenceUri.Scheme -ne 'https') {
+            throw 'The WinRAR licence download URL must be an absolute HTTPS URL.'
+        }
+        $WinRARLicensePath = Join-Path $stage 'rarreg.key'
+        Invoke-WebRequest -Uri $licenceUri.AbsoluteUri -UseBasicParsing -OutFile $WinRARLicensePath -MaximumRedirection 10 -TimeoutSec 120
+        Write-Host 'WinRAR licence download completed.'
+    }
+    if ($WinRARLicensePath -and -not (Test-WinRARLicenseFile -Path $WinRARLicensePath)) {
+        throw 'The licence file is not in the expected WinRAR registration format. Google Drive may have returned a sign-in or confirmation page. No setup script was run.'
     }
 
     $restoreDir = Join-Path $env:ProgramData 'WindowsVPSSetup'

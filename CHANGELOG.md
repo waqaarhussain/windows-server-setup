@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1, 2026-10-31
+
+- Integrate the configured Google Drive WinRAR licence download into the main installer and document the automatic install flow.
+- Prefer local licence files, allow a URL override or download opt-out, and remove downloaded licence bytes with the installer staging directory.
+- Reject sign-in/confirmation pages and truncated registration files before executing setup; add synthetic fixture checks without downloading a real licence in CI.
+
 ## 0.2.0, 2026-10-31
 
 - Add Chrome defaults for new profiles, preserve unrelated associations, and report when an existing user still needs the Windows default-browser selection.

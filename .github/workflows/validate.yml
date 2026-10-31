@@ -37,3 +37,6 @@ jobs:
       - name: Validate browser defaults and cleanup scope without changing Windows
         shell: powershell
         run: .\tests\Validate-Extras.ps1
+      - name: Reject invalid licence downloads without downloading a real licence
+        shell: powershell
+        run: .\tests\Validate-LicenseDownload.ps1

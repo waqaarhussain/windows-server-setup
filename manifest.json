@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "files": {
     "scripts/Configure-Extras.ps1": "1a17a2373f2146ce437688541912610938558ccea93d8eac872546a8de60384c",
     "scripts/Disable-CustomLayout.ps1": "ea2d87bdcc63320556c14e5fab32673a8c37441146aa7127a24221240465f71e",
