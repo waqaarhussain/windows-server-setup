@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2, 2026-10-31
+
+- Fix unsafe registry key creation: open/create existing keys non-destructively and preserve sibling values and child keys on repeated writes.
+- Enable discovery and file/printer sharing for all detected active firewall profiles, including Public, with inbound LocalSubnet scope and native outbound scopes preserved.
+- Print complete failure messages after the summary table.
+- Add Windows regression checks using an isolated test registry key and mocked Public/mixed-network firewall commands.
+
 ## 0.2.1, 2026-10-31
 
 - Integrate the configured Google Drive WinRAR licence download into the main installer and document the automatic install flow.

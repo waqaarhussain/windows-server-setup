@@ -31,7 +31,7 @@ Execution-policy Bypass applies only to the child PowerShell process. Managed po
 | Start menu | Keeps the app list, disables usage/recent-item preferences and enforces hiding the Recently added section |
 | Start tiles | Applies the empty Server 2022 Start layout policy to the current user |
 | Taskbar | Includes Chrome in the layout; existing order and removing Edge remain manual |
-| Discovery and sharing | Starts the dependency services and enables both entire firewall groups, including outbound rules, for detected active Private/Domain profiles |
+| Discovery and sharing | Starts the dependency services and enables both entire firewall groups, including outbound rules, for detected active profiles, including Public |
 | Notifications | Disables the configured toast/app-notification preferences |
 | Chrome defaults | Imports Chrome defaults for new profiles, checks the current HTTP/HTTPS choices, and opens Default apps if an existing user still needs to select Chrome |
 | Optional startup services | Disables only the named consumer-service list below, with original states saved |
@@ -39,7 +39,7 @@ Execution-policy Bypass applies only to the child PowerShell process. Managed po
 
 The Recently added policy can grey out the Settings toggle. Per-app blue “New” labels are a separate shell behaviour and are not guaranteed to disappear. Layout policy can restrict Start customisation. Tray/scaling preferences and the final UI need checking on each Windows image.
 
-Sharing skips Public profiles. This retains the tested baseline's restriction even if Public is the only active profile; the sharing step then reports failure. With multiple active supported profiles, all detected profiles are configured together. These are settings for the profiles active during setup; there is no watcher for later network changes.
+Sharing now enables discovery and file/printer sharing for all detected active profiles, including Public. Inbound rules in those two groups are scoped to LocalSubnet before being enabled. Native outbound scopes are preserved, including multicast discovery targets. Network categories and RDP rules are unchanged. There is no watcher for later profile changes.
 
 On a VPS, Private does not mean the interface is inaccessible from the internet. Restrict SMB, NetBIOS and discovery traffic using the provider firewall or VPN before using sharing. The script does not configure the provider firewall or create shares.
 
@@ -120,3 +120,5 @@ When any downloaded script changes, regenerate `manifest.json` with the SHA-256 
 Relevant Microsoft references: [Invoke-WebRequest](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-webrequest?view=powershell-5.1), [Set-NetFirewallRule](https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallrule?view=windowsserver2022-ps).
 
 Additional references: [Google Chrome default associations](https://support.google.com/chrome/a/answer/7009292?hl=en), [Storage Sense policies](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-storage), [Windows Server Storage Sense troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/troubleshoot-windows-server-storage-sense), [component cleanup](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder).
+
+Registry writes open/create keys without replacing them, and update only the requested values. Regression tests preserve existing values and child keys across repeated writes. This prevents further resets; it cannot reconstruct unrelated settings that an earlier toolkit run may already have removed. Failed steps are also printed in full after the results table.
