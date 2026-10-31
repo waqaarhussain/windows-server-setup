@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0",
+  "files": {
+    "scripts/Setup-WindowsServer.ps1": "20610561afae7b72b52a4e6461c5e8070b1e11720f712800de33234d1e5435e7",
+    "scripts/Disable-CustomLayout.ps1": "ea2d87bdcc63320556c14e5fab32673a8c37441146aa7127a24221240465f71e"
+  }
+}
