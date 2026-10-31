@@ -34,3 +34,6 @@ jobs:
             throw 'Embedded licence material must not be committed'
           }
           if (Get-ChildItem -Recurse -Filter rarreg.key) { throw 'Private WinRAR licence found' }
+      - name: Validate browser defaults and cleanup scope without changing Windows
+        shell: powershell
+        run: .\tests\Validate-Extras.ps1

@@ -1,8 +1,11 @@
 {
   "schemaVersion": 1,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "files": {
-    "scripts/Setup-WindowsServer.ps1": "20610561afae7b72b52a4e6461c5e8070b1e11720f712800de33234d1e5435e7",
-    "scripts/Disable-CustomLayout.ps1": "ea2d87bdcc63320556c14e5fab32673a8c37441146aa7127a24221240465f71e"
+    "scripts/Configure-Extras.ps1": "1a17a2373f2146ce437688541912610938558ccea93d8eac872546a8de60384c",
+    "scripts/Disable-CustomLayout.ps1": "ea2d87bdcc63320556c14e5fab32673a8c37441146aa7127a24221240465f71e",
+    "scripts/Invoke-StorageCleanup.ps1": "f70eb430f330a2db78a49384b0d0d930e2721e71e42bcf241ec189ef8103c085",
+    "scripts/Restore-OptionalServices.ps1": "59d5e88b7381c28eefc07b723efa86e8a8a35d0af41e2e6d4dd9c5621fd815c4",
+    "scripts/Setup-WindowsServer.ps1": "3dc9f5b0405d1ed2bd92399ff1995a42f6c726c6dad743c1886fdf095f446256"
   }
 }

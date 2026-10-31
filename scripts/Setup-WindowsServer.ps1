@@ -7,6 +7,7 @@ param([string]$WinRARLicensePath)
 # WinRAR licensing uses an optional local rarreg.key file; no licence is embedded.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+. (Join-Path $PSScriptRoot 'Configure-Extras.ps1')
 
 if ($PSVersionTable.PSEdition -ne 'Desktop' -or -not [Environment]::Is64BitProcess) { throw 'Use 64-bit Windows PowerShell 5.1.' }
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -27,7 +28,14 @@ New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 $results = [Collections.Generic.List[object]]::new()
 function Step([string]$name, [scriptblock]$do) {
     Write-Host "`n>> $name" -ForegroundColor Cyan
-    try { & $do; $results.Add([pscustomobject]@{Step=$name;Result='Applied';Notes='See log'}); Write-Host 'Applied (check UI after sign-in)' -ForegroundColor Green }
+    $script:stepResult = 'Applied'
+    $script:stepNotes = 'See log'
+    try {
+        & $do
+        $results.Add([pscustomobject]@{Step=$name;Result=$script:stepResult;Notes=$script:stepNotes})
+        $colour = if ($script:stepResult -eq 'Applied') { 'Green' } else { 'Yellow' }
+        Write-Host "$($script:stepResult) (check results and UI after sign-in)" -ForegroundColor $colour
+    }
     catch { $results.Add([pscustomobject]@{Step=$name;Result='FAILED';Notes=$_.Exception.Message}); Write-Warning "$name : $($_.Exception.Message)" }
 }
 function Dword([string]$path,[string]$name,[int]$value) {
@@ -207,12 +215,33 @@ try {
         Dword 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SubscribedContent-338389Enabled' 0
         Dword 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SubscribedContent-310093Enabled' 0
     }
+    Step '15. Chrome default browser' {
+        $state = Set-VpsChromeDefaults -Root $root
+        $script:stepResult = $state.Status
+        $script:stepNotes = $state.Notes
+        Write-Host $state.Notes -ForegroundColor Yellow
+    }
+    Step '16. Disable optional consumer startup services' {
+        Disable-VpsOptionalServices -Root $root
+    }
+    Step '17. Daily Storage Sense and Windows update/temp cleanup' {
+        $state = Enable-VpsStorageCleanup -Root $root -SourceDirectory $PSScriptRoot
+        if (-not $state.StorageSenseAvailable) {
+            $script:stepResult = 'Fallback configured'
+            $script:stepNotes = 'Storage Sense unavailable; daily Windows Disk Cleanup configured.'
+        } else {
+            $script:stepNotes = 'Daily Storage Sense enabled; Windows cleanup task at 03:30 local time.'
+        }
+    }
     Write-Host "`n=== SETUP RESULTS ===" -ForegroundColor Cyan
     $results | Format-Table -AutoSize
     Write-Host "Log: $logPath"
     Write-Host 'Sign out and sign in for Start policy to apply; some settings require reboot.' -ForegroundColor Yellow
     Write-Host 'The taskbar icon order / unpinning Edge remain manual.' -ForegroundColor Yellow
     Write-Host 'Sharing is not applied to Public networks.' -ForegroundColor Yellow
+    if (@($results | Where-Object { $_.Result -eq 'Needs action' }).Count -gt 0) {
+        Write-Host 'ACTION: In Default apps, select Google Chrome under Web browser.' -ForegroundColor Yellow
+    }
     $results | Export-Csv -LiteralPath (Join-Path $logDir ('Results-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.csv')) -NoTypeInformation
     if (@($results | Where-Object { $_.Result -eq 'FAILED' }).Count -gt 0) {
         throw 'One or more setup steps failed. Review the results and log above.'

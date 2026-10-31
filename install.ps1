@@ -48,7 +48,13 @@ try {
 
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     if ($manifest.schemaVersion -ne 1) { throw 'Unsupported installer manifest.' }
-    $files = @('scripts/Setup-WindowsServer.ps1', 'scripts/Disable-CustomLayout.ps1')
+    $files = @(
+        'scripts/Setup-WindowsServer.ps1',
+        'scripts/Disable-CustomLayout.ps1',
+        'scripts/Configure-Extras.ps1',
+        'scripts/Invoke-StorageCleanup.ps1',
+        'scripts/Restore-OptionalServices.ps1'
+    )
     foreach ($relative in $files) {
         $expected = [string]$manifest.files.$relative
         if ($expected -notmatch '^[a-fA-F0-9]{64}$') { throw "Missing or invalid checksum: $relative" }
@@ -67,6 +73,9 @@ try {
     $restoreDir = Join-Path $env:ProgramData 'WindowsVPSSetup'
     New-Item -ItemType Directory -Path $restoreDir -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $stage 'scripts/Disable-CustomLayout.ps1') -Destination $restoreDir -Force
+    foreach ($helper in @('Configure-Extras.ps1','Restore-OptionalServices.ps1')) {
+        Copy-Item -LiteralPath (Join-Path $stage "scripts/$helper") -Destination $restoreDir -Force
+    }
     $setupArgs = @{}
     if ($WinRARLicensePath) { $setupArgs.WinRARLicensePath = $WinRARLicensePath }
     & (Join-Path $stage 'scripts/Setup-WindowsServer.ps1') @setupArgs

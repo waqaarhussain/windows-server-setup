@@ -33,12 +33,35 @@ Execution-policy Bypass applies only to the child PowerShell process. Managed po
 | Taskbar | Includes Chrome in the layout; existing order and removing Edge remain manual |
 | Discovery and sharing | Starts the dependency services and enables both entire firewall groups, including outbound rules, for detected active Private/Domain profiles |
 | Notifications | Disables the configured toast/app-notification preferences |
+| Chrome defaults | Imports Chrome defaults for new profiles, checks the current HTTP/HTTPS choices, and opens Default apps if an existing user still needs to select Chrome |
+| Optional startup services | Disables only the named consumer-service list below, with original states saved |
+| Storage cleanup | Enables daily Storage Sense where installed and schedules native Windows update/temp cleanup at 03:30 local time |
 
 The Recently added policy can grey out the Settings toggle. Per-app blue “New” labels are a separate shell behaviour and are not guaranteed to disappear. Layout policy can restrict Start customisation. Tray/scaling preferences and the final UI need checking on each Windows image.
 
 Sharing skips Public profiles. This retains the tested baseline's restriction even if Public is the only active profile; the sharing step then reports failure. With multiple active supported profiles, all detected profiles are configured together. These are settings for the profiles active during setup; there is no watcher for later network changes.
 
 On a VPS, Private does not mean the interface is inaccessible from the internet. Restrict SMB, NetBIOS and discovery traffic using the provider firewall or VPN before using sharing. The script does not configure the provider firewall or create shares.
+
+## Chrome, optional services and storage cleanup
+
+Chrome defaults cover `.htm`, `.html`, `http` and `https`. Setup exports the existing association XML, preserves unrelated mappings, changes only the browser mappings and imports it for new user profiles. A domain-joined machine also receives the local default-associations policy unless another such policy already exists. A domain policy can override local settings.
+
+For an existing standalone VPS user, Windows requires the user's browser selection. If the HTTP/HTTPS UserChoice values already identify Chrome, the step reports Applied. Otherwise setup opens **Default apps** and reports **Needs action**: select Google Chrome under Web browser. It does not forge Windows' protected UserChoice hash or claim a policy write changed the current default. Your screenshot already shows Chrome selected; this step is for future installs too.
+
+The optional-service list is **Fax, MapsBroker, RetailDemo, WMPNetworkSvc, XblAuthManager, XblGameSave, XboxNetApiSvc and XboxGipSvc**. Missing services are skipped; services with running dependent services are skipped. These supply fax, offline maps, retail-demo, Windows Media Player library sharing and Xbox features. Disabling them assumes you do not use those optional features on this VPS. Server 2022 may already omit or disable many of them, so no particular speedup is promised. RDP, networking, Defender, Windows Update, storage services, printing and the discovery/SMB services from the original setup are excluded.
+
+Restore saved optional-service startup types, and restart services that were originally running, from Administrator PowerShell:
+
+```powershell
+& 'C:\ProgramData\WindowsVPSSetup\Restore-OptionalServices.ps1'
+```
+
+Where the native service and task exist, Storage Sense is enabled **daily** for unused temporary files. Downloads, Recycle Bin and cloud-file dehydration are explicitly excluded. If Storage Sense is absent on the image, setup reports **Fallback configured** and uses scheduled Windows Disk Cleanup; it does not claim the Storage Sense switch was enabled.
+
+The separate **WindowsVPSSetup-StorageCleanup** task runs as SYSTEM at **03:30 local time**, or when next available. It uses a dedicated Disk Cleanup profile, selecting only installed handlers for **Windows Update Cleanup, Temporary Files, Temporary Setup Files and Delivery Optimization Files**, and starts Windows' existing component-cleanup task if it is ready. It skips its run when a servicing restart is pending, known servicing processes are running, Windows Update is busy, or update state cannot be read. Windows decides which files are eligible; the task does not wipe all downloaded updates immediately. Storage Sense has its own native cadence.
+
+No cleanup is executed during setup. The privileged worker is installed under a directory writable only by Administrators and SYSTEM, with read/execute access for Users. Cleanup transcripts are in the existing Logs folder. The worker does not manually delete SoftwareDistribution or WinSxS and does not use DISM `/ResetBase`. File cleanup depends on the image's installed Windows handlers; it must be checked on a test VPS.
 
 ## WinRAR licence
 
@@ -80,8 +103,10 @@ Sign out and back in. This removes only `StartLayoutFile` and `LockedStartLayout
 
 ## Validation and maintenance
 
-The consolidated script has not been executed on a Windows VPS as a whole. Individual fixes were tested on the original Server 2022 machine. Repository packaging passed syntax parsing, XML, checksum and private-licence checks; the Windows workflow parses every script, checks the manifest, and parses the embedded layout XML without applying the settings. The workflow runs on pushes and pull requests. A fresh VPS snapshot remains the appropriate integration test.
+The consolidated script has not been executed on a Windows VPS as a whole. Individual fixes were tested on the original Server 2022 machine. Repository packaging passed syntax parsing, XML, checksum and private-licence checks; the Windows workflow parses every script, checks the manifest, parses the embedded layout XML, and tests browser XML merging and the service/cleanup scope without applying the settings. The workflow runs on pushes and pull requests. A fresh VPS snapshot remains the appropriate integration test.
 
-When setup or the layout-removal script changes, regenerate `manifest.json` with the SHA-256 of the exact tracked file bytes. Keep PowerShell files as UTF-8 without BOM and LF line endings, as configured in `.gitattributes`, so raw downloads and local checkout bytes agree.
+When any downloaded script changes, regenerate `manifest.json` with the SHA-256 of the exact tracked file bytes. Keep PowerShell files as UTF-8 without BOM and LF line endings, as configured in `.gitattributes`, so raw downloads and local checkout bytes agree.
 
 Relevant Microsoft references: [Invoke-WebRequest](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-webrequest?view=powershell-5.1), [Set-NetFirewallRule](https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallrule?view=windowsserver2022-ps).
+
+Additional references: [Google Chrome default associations](https://support.google.com/chrome/a/answer/7009292?hl=en), [Storage Sense policies](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-storage), [Windows Server Storage Sense troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/troubleshoot-windows-server-storage-sense), [component cleanup](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder).
