@@ -39,7 +39,7 @@ Execution-policy Bypass applies only to the child PowerShell process. Managed po
 
 The Recently added policy can grey out the Settings toggle. Per-app blue “New” labels are a separate shell behaviour and are not guaranteed to disappear. Layout policy can restrict Start customisation. Tray/scaling preferences and the final UI need checking on each Windows image.
 
-Sharing now enables discovery and file/printer sharing for all detected active profiles, including Public. Inbound rules in those two groups are scoped to LocalSubnet before being enabled. Native outbound scopes are preserved, including multicast discovery targets. Network categories and RDP rules are unchanged. There is no watcher for later profile changes.
+Sharing now enables discovery and file/printer sharing for all detected active profiles, including Public. Existing inbound/outbound address, port, logical-endpoint and multicast filters are preserved. No uniform LocalSubnet address override is applied. Network categories and RDP rules are unchanged. There is no watcher for later profile changes.
 
 On a VPS, Private does not mean the interface is inaccessible from the internet. Restrict SMB, NetBIOS and discovery traffic using the provider firewall or VPN before using sharing. The script does not configure the provider firewall or create shares.
 
@@ -122,3 +122,13 @@ Relevant Microsoft references: [Invoke-WebRequest](https://learn.microsoft.com/e
 Additional references: [Google Chrome default associations](https://support.google.com/chrome/a/answer/7009292?hl=en), [Storage Sense policies](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-storage), [Windows Server Storage Sense troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/troubleshoot-windows-server-storage-sense), [component cleanup](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder).
 
 Registry writes open/create keys without replacing them, and update only the requested values. Regression tests preserve existing values and child keys across repeated writes. This prevents further resets; it cannot reconstruct unrelated settings that an earlier toolkit run may already have removed. Failed steps are also printed in full after the results table.
+
+## Repair sharing only
+
+For a machine already configured by this toolkit, add `-SharingOnly` to the normal installer command. It downloads and verifies the package, then starts the discovery/sharing services and enables both firewall groups for the active profiles, including Public. It skips application installation, licence download and desktop/registry changes. Existing rule filters are preserved to support Windows logical-endpoint rules. Earlier versions may have changed some rules before failing; this mode preserves their current filters rather than resetting the entire firewall.
+
+```powershell
+$f = "$env:TEMP\windows-server-install.ps1"; iwr 'https://raw.githubusercontent.com/waqaarhussain/windows-server-setup/main/install.ps1' -UseBasicParsing -OutFile $f; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $f -SharingOnly
+```
+
+Close and reopen Advanced sharing settings afterwards. A transcript is saved in the usual Logs folder. A command-level success verifies the effective firewall rules, not a direct observation of the Settings switches.

@@ -211,7 +211,7 @@ try {
     Write-Host "Log: $logPath"
     Write-Host 'Sign out and sign in for Start policy to apply; some settings require reboot.' -ForegroundColor Yellow
     Write-Host 'The taskbar icon order / unpinning Edge remain manual.' -ForegroundColor Yellow
-    Write-Host 'Sharing includes active Public profiles; inbound sharing/discovery rules use LocalSubnet scope.' -ForegroundColor Yellow
+    Write-Host 'Sharing includes active Public profiles; existing rule address/port/endpoint filters are preserved.' -ForegroundColor Yellow
     if (@($results | Where-Object { $_.Result -eq 'Needs action' }).Count -gt 0) {
         Write-Host 'ACTION: In Default apps, select Google Chrome under Web browser.' -ForegroundColor Yellow
     }
